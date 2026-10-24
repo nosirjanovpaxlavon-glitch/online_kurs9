@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Kurs</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; min-height: 100vh; transition: background 0.3s; }
+        .header { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header h1 { font-size: 1.8rem; font-weight: 800; }
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.3s ease; }
+        .btn-primary { background: white; color: #6366f1; box-shadow: 0 4px 6px rgba(99,102,241,0.3); }
+        .btn-primary:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 6px 12px rgba(99,102,241,0.4); }
+        .btn-primary:active { transform: translateY(0) scale(0.98); }
+        .btn-outline { background: transparent; border: 2px solid white; color: white; }
+        .btn-outline:hover { background: white; color: #6366f1; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; padding-bottom: 100px; perspective: 1000px; }
+        .section-title { text-align: center; margin-bottom: 2rem; font-size: 2.25rem; font-weight: 800; color: #1f2937; }
+        .course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 2rem; }
+        .course-card { background: white; border-radius: 1rem; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); transform-style: preserve-3d; cursor: pointer; }
+        .course-card:hover { transform: translateY(-12px) rotateX(5deg); box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .course-card .course-header { height: 160px; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; transform: translateZ(30px); }
+        .course-card .course-content { padding: 1.5rem; }
+        .course-card .course-subject { display: inline-block; padding: 0.375rem 1rem; border-radius: 1.5rem; font-size: 0.75rem; margin-bottom: 0.75rem; color: white; font-weight: 600; transform: translateZ(20px); }
+        .course-card .course-title { font-size: 1.375rem; font-weight: 800; margin-bottom: 0.75rem; color: #1f2937; transform: translateZ(20px); }
+        .course-card .course-price { font-size: 1.375rem; font-weight: 800; color: #10b981; margin-bottom: 1rem; transform: translateZ(20px); }
+        .course-card .course-desc { color: #6b7280; line-height: 1.6; margin-bottom: 1.25rem; font-size: 0.9rem; transform: translateZ(20px); }
+        .course-card .course-info { display: flex; gap: 1rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; transform: translateZ(20px); }
+        .course-card .btn { transform: translateZ(25px); }
+        .course-card .btn:hover { transform: translateY(-2px) scale(1.05) translateZ(25px); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; padding: 2.5rem; border-radius: 1rem; width: 100%; max-width: 500px; animation: modalIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform: scale(0.8); }
+        @keyframes modalIn { 0% { transform: scale(0.5) translateY(50px); opacity: 0; } 70% { transform: scale(1.05) translateY(-10px); } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem; }
+        .modal-header h2 { font-size: 1.5rem; font-weight: 800; color: #1f2937; }
+        .close-btn { background: none; border: none; font-size: 1.75rem; cursor: pointer; color: #9ca3af; }
+        .close-btn:hover { color: #1f2937; transform: scale(1.2); }
+        .hidden { display: none !important; }
+        #errorPopup { position: fixed; top: 20px; right: 20px; background: #ef4444; color: white; padding: 1rem 1.5rem; border-radius: 0.5rem; z-index: 200; display: none; animation: slideIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        #errorPopup.show { display: block; }
+        @keyframes slideIn { 0% { transform: translateX(150%); opacity: 0; } 60% { transform: translateX(-10px); } 100% { transform: translateX(0); opacity: 1; } }
+        .login-type-toggle { display: flex; gap: 1rem; margin-bottom: 1rem; }
+        .login-type-toggle label { flex: 1; text-align: center; cursor: pointer; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 0.5rem; transition: all 0.3s; font-weight: 600; }
+        .login-type-toggle input[type="radio"] { display: none; }
+        .login-type-toggle input[type="radio"]:checked + label { border-color: #6366f1; background: rgba(99,102,241,0.1); color: #6366f1; transform: scale(1.05); }
+        .auth-container { display: flex; justify-content: center; align-items: center; min-height: 70vh; }
+        .auth-box { background: white; padding: 2.5rem; border-radius: 1rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #1f2937; }
+        .form-group input { width: 100%; padding: 0.875rem; border: 2px solid #e5e7eb; border-radius: 0.5rem; font-size: 1rem; transition: all 0.3s; }
+        .form-group input:focus { outline: none; border-color: #6366f1; transform: scale(1.02); box-shadow: 0 0 0 4px rgba(99,102,241,0.1); }
+        .w-full { width: 100%; }
+        .text-center { text-align: center; }
+        .text-decoration-none { text-decoration: none !important; }
+        .footer { background: linear-gradient(135deg, #1f2937, #111827); color: white; padding: 2rem 2rem; position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; transition: all 0.4s; }
+        .footer.open { height: auto; padding: 2rem; }
+        .footer.collapsed { height: 60px; overflow: hidden; padding: 1rem 2rem; }
+        .footer-toggle { display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        .footer-toggle .arrow { font-size: 1.5rem; transition: transform 0.4s; }
+        .footer.open .footer-toggle .arrow { transform: rotate(180deg); }
+        .footer-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: center; gap: 3rem; align-items: center; flex-wrap: wrap; }
+        .social-link { color: white; text-decoration: none; font-size: 1.25rem; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 0.5rem; transition: all 0.4s; display: inline-block; }
+        .social-link:hover { transform: translateY(-8px); }
+        .social-link.youtube { background: #ff0000; }
+        .social-link.telegram { background: #0088cc; }
+        .dark-mode { background: #1f2937; }
+        .dark-mode .course-card { background: #374151; }
+        .dark-mode .course-title { color: #f3f4f6; }
+        .dark-mode .course-price { color: #10b981; }
+        .dark-mode .course-desc { color: #d1d5db; }
+        .dark-mode .section-title { color: #f3f4f6; }
+        .dark-mode .footer { background: #111827; }
+        .dark-mode .login-type-toggle label { border-color: #374151; }
+        .dark-mode .login-type-toggle input[type="radio"]:checked + label { background: rgba(99,102,241,0.2); }
+    </style>
+</head>
+<body>
+    <div id="errorPopup"></div>
+    <header class="header">
+        <h1>📚 Online Kurs</h1>
+        <div class="header-controls">
+            <button onclick="toggleDarkMode()" class="btn btn-outline">🌙 Kuzgi rejim</button>
+            <div id="authButtons">
+                <button onclick="showLogin()" class="btn btn-outline">🔑 Kirish</button>
+                <button onclick="showRegister()" class="btn btn-primary">📝 Ro'yxatdan o'tish</button>
+            </div>
+            <div id="userMenu" class="hidden">
+                <span id="userEmail" style="margin-right: 10px;"></span>
+                <button onclick="logout()" class="btn btn-outline">🚪 Chiqish</button>
+            </div>
+        </div>
+    </header>
+    <main id="mainContent" class="container"></main>
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Muvaffaqiyatli! ✅</h2>
+                <button class="close-btn" onclick="closeModal('successModal')">&times;</button>
+            </div>
+            <div id="successModalBody" class="text-center" style="margin-bottom: 1rem;"></div>
+            <div class="text-center"><button class="btn btn-primary" onclick="closeModal('successModal'); renderCourses()">OK</button></div>
+        </div>
+    </div>
+    <div id="landingModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div id="landingContent" class="text-center" style="padding: 2rem;">
+                <h2 id="landingTitle" style="font-size: 2.5rem; margin-bottom: 1rem; color: #1f2937;">Hush kelibsz! 🎉</h2>
+                <p id="landingText" style="font-size: 1.25rem; color: #6b7280; line-height: 1.6;">Online kurslarimizga xush kelibsiz. Biz bilan dasturlash, IT va boshqa fanlarni o'rganishingiz mumkin.</p>
+            </div>
+            <div class="text-center" style="margin-top: 2rem;">
+                <button id="landingNextBtn" class="btn btn-primary" onclick="nextLandingStep()">Keyingi ➡️</button>
+            </div>
+        </div>
+    </div>
+    <div id="courseDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="courseDetailsTitle">📚 Kurs haqida</h2>
+                <button class="close-btn" onclick="closeModal('courseDetailsModal')">&times;</button>
+            </div>
+            <div id="courseDetailsBody"></div>
+            <div class="text-center" style="margin-top: 1.5rem;">
+                <button class="btn btn-primary" onclick="closeModal('courseDetailsModal')">Yopish</button>
+            </div>
+        </div>
+    </div>
+    <div id="videoModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2 id="videoModalTitle">▶️ Dars</h2>
+                <button class="close-btn" onclick="closeModal('videoModal')">&times;</button>
+            </div>
+            <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+                <iframe id="videoPlayer" src="" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" allowfullscreen></iframe>
+            </div>
+            <div class="text-center" style="margin-top: 1rem;">
+                <button class="btn btn-primary" onclick="closeModal('videoModal')">Yopish</button>
+            </div>
+        </div>
+    </div>
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📅 Kursni band qilish</h2>
+                <button class="close-btn" onclick="closeBooking()">&times;</button>
+            </div>
+            <form id="bookingForm">
+                <input type="hidden" id="bookingCourseId">
+                <div class="form-group"><label>👤 Talaba ismi:</label><input type="text" id="bookingName" required></div>
+                <div class="form-group"><label>📱 Telefon raqami:</label><input type="tel" id="bookingPhone" required pattern="^\+9989[0-9]{8}$" maxlength="13"></div>
+                <div class="form-group"><label>📅 Boshlanish sanasi:</label><input type="date" id="bookingDate" required></div>
+                <div class="form-group"><label>⏳ Muddat (oyda):</label><select id="bookingDuration" required><option value="1">1 oy</option><option value="2">2 oy</option><option value="3">3 oy</option></select></div>
+                <div class="form-group"><label>🎁 Discount kod (ixtiyoriy):</label><input type="text" id="bookingDiscount" placeholder="Stanford - 25% chegirma"></div>
+                <div class="form-group"><label>🔒 Parol (to'lov uchun):</label><input type="password" id="bookingPassword" required></div>
+                <button type="submit" class="btn btn-primary w-full">✅ To'lovni tasdiqlash</button>
+            </form>
+        </div>
+    </div>
+    <footer class="footer collapsed" id="footer">
+        <div class="footer-content">
+            <a href="https://www.youtube.com/@NOSIRJANOVPAXLAVON" target="_blank" class="social-link youtube">📺 YouTube: NOSIRJANOVPAXLAVON</a>
+            <a href="https://t.me/PaxlavonAndAzizbek" target="_blank" class="social-link telegram">Telegram: Paxlavon and Azizbek</a>
+        </div>
+        <div class="footer-toggle" onclick="toggleFooter()">
+            <div class="arrow">⬇️</div>
+        </div>
+    </footer>
+    <script>
+        const db = {
+            users: [{ username: 'ustoz', password: 'ustoz123', role: 'teacher' }],
+            courses: [
+                { id: 1, subject: 'JavaScript', icon: '💻', gradient: 'linear-gradient(135deg, #f0db4f, #e6c22d)', desc: 'Qanday sharoitda o\'tiladi: Zamonaviy web-dasturlash. Darslar qanday o\'tkaziladi: Amaliy mashg\'ulotlar. 1-mavzu nima: O\'zgaruvchilar va ma\'lumot turlari.', price: 500000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 25000 },
+                { id: 2, subject: 'Python', icon: '🐍', gradient: 'linear-gradient(135deg, #3776ab, #245e93)', desc: 'Qanday sharoitda o\'tiladi: Dasturlash asoslari. Darslar qanday o\'tkaziladi: Konspekt va amaliy. 1-mavzu nima: Print va input funksiyalari.', price: 450000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 20000 },
+                { id: 3, subject: 'Java', icon: '☕', gradient: 'linear-gradient(135deg, #db883b, #c5702b)', desc: 'Qanday sharoitda o\'tiladi: OOP asoslari. Darslar qanday o\'tkaziladi: Video darslar. 1-mavzu nima: Class va Object tushunchasi.', price: 550000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 25000 },
+                { id: 4, subject: 'C++', icon: '⚙️', gradient: 'linear-gradient(135deg, #5b77a9, #4a638f)', desc: 'Qanday sharoitda o\'tiladi: System programming. Darslar qanday o\'tkaziladi: Katta loyihalar. 1-mavzu nima: Pointerlar va memory.', price: 600000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 30000 },
+                { id: 5, subject: 'HTML&CSS', icon: '📄', gradient: 'linear-gradient(135deg, #2965f1, #0047ab)', desc: 'Qanday sharoitda o\'tiladi: Web dizayn asoslari. Darslar qanday o\'tkaziladi: Layout yaratish. 1-mavzu nima: Box model va flexbox.', price: 350000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 15000 },
+                { id: 6, subject: 'React', icon: '⚛️', gradient: 'linear-gradient(135deg, #20232a, #61dafb)', desc: 'Qanday sharoitda o\'tiladi: SPA dasturlash. Darslar qanday o\'tkaziladi: Components. 1-mavzu nima: Props va State.', price: 650000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 30000 },
+                { id: 7, subject: 'Vue.js', icon: '🟢', gradient: 'linear-gradient(135deg, #42b883, #35495e)', desc: 'Qanday sharoitda o\'tiladi: Reaktiv dasturlash. Darslar qanday o\'tkaziladi: Composables. 1-mavzu nima: Directives.', price: 500000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 25000 },
+                { id: 8, subject: 'Angular', icon: '🔵', gradient: 'linear-gradient(135deg, #b52e31, #9a1e3e)', desc: 'Qanday sharoitda o\'tiladi: Enterprise dasturlash. Darslar qanday o\'tkaziladi: Modules. 1-mavzu nima: Decorators.', price: 600000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 30000 },
+                { id: 9, subject: 'Node.js', icon: '🟢', gradient: 'linear-gradient(135deg, #589d43, #448334)', desc: 'Qanday sharoitda o\'tiladi: Backend development. Darslar qanday o\'tkaziladi: API yaratish. 1-mavzu nima: Express framework.', price: 550000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 25000 },
+                { id: 10, subject: 'Django', icon: '🐍', gradient: 'linear-gradient(135deg, #092e20, #00a86a)', desc: 'Qanday sharoitda o\'tiladi: Web framework. Darslar qanday o\'tkaziladi: ORM. 1-mavzu nima: Models.', price: 550000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 25000 },
+                { id: 11, subject: 'Flask', icon: '🐍', gradient: 'linear-gradient(135deg, #092e20, #00a86a)', desc: 'Qanday sharoitda o\'tiladi: Microframework. Darslar qanday o\'tkaziladi: REST API. 1-mavzu nima: Routes.', price: 500000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 25000 },
+                { id: 12, subject: 'Spring Boot', icon: '☕', gradient: 'linear-gradient(135deg, #6db33f, #559c33)', desc: 'Qanday sharoitda o\'tiladi: Java enterprise. Darslar qanday o\'tkaziladi: Microservices. 1-mavzu nima: Annotations.', price: 650000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 30000 },
+                { id: 13, subject: 'PHP', icon: '🕸️', gradient: 'linear-gradient(135deg, #777bb3, #55599e)', desc: 'Qanday sharoitda o\'tiladi: Server-side scripting. Darslar qanday o\'tkaziladi: WordPress. 1-mavzu nima: Superglobals.', price: 450000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 20000 },
+                { id: 14, subject: 'WordPress', icon: 'CMS', gradient: 'linear-gradient(135deg, #21759b, #1a5c78)', desc: 'Qanday sharoitda o\'tiladi: CMS. Darslar qanday o\'tkaziladi: Themes. 1-mavzu nima: Plugins.', price: 400000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 18000 },
+                { id: 15, subject: 'SQL', icon: 'DATABASE', gradient: 'linear-gradient(135deg, #336791, #265472)', desc: 'Qanday sharoitda o\'tiladi: Database. Darslar qanday o\'tkaziladi: Queries. 1-mavzu nima: SELECT va WHERE.', price: 400000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 18000 },
+                { id: 16, subject: 'MongoDB', icon: '🍃', gradient: 'linear-gradient(135deg, #47a248, #3e8e41)', desc: 'Qanday sharoitda o\'tiladi: NoSQL. Darslar qanday o\'tkaziladi: Documents. 1-mavzu nima: CRUD operations.', price: 450000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 20000 },
+                { id: 17, subject: 'Docker', icon: '🚢', gradient: 'linear-gradient(135deg, #2496ed, #1e80c9)', desc: 'Qanday sharoitda o\'tiladi: Containerization. Darslar qanday o\'tkaziladi: Images. 1-mavzu nima: Compose.', price: 500000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 25000 },
+                { id: 18, subject: 'Kubernetes', icon: '⚓', gradient: 'linear-gradient(135deg, #326ce5, #2a5ac0)', desc: 'Qanday sharoitda o\'tiladi: Orchestration. Darslar qanday o\'tkaziladi: Pods. 1-mavzu nima: Deployments.', price: 600000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 30000 },
+                { id: 19, subject: 'AWS', icon: '☁️', gradient: 'linear-gradient(135deg, #232f3e, #1a2533)', desc: 'Qanday sharoitda o\'tiladi: Cloud computing. Darslar qanday o\'tkaziladi: EC2. 1-mavzu nima: S3.', price: 700000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 35000 },
+                { id: 20, subject: 'Linux', icon: '🐧', gradient: 'linear-gradient(135deg, #fcb045, #fd7e38)', desc: 'Qanday sharoitda o\'tiladi: OS. Darslar qanday o\'tkaziladi: Commands. 1-mavzu nima: File system.', price: 450000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 20000 },
+                { id: 21, subject: 'Git', icon: '📄', gradient: 'linear-gradient(135deg, #f34f29, #d63b21)', desc: 'Qanday sharoitda o\'tiladi: Version control. Darslar qanday o\'tkaziladi: Repositories. 1-mavzu nima: Commit va Push.', price: 350000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 15000 },
+                { id: 22, subject: 'DevOps', icon: '⚙️', gradient: 'linear-gradient(135deg, #4566b8, #3a56a0)', desc: 'Qanday sharoitda o\'tiladi: CI/CD. Darslar qanday o\'tkaziladi: Pipelines. 1-mavzu nima: Jenkins.', price: 650000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 30000 },
+                { id: 23, subject: 'SEO', icon: '🔍', gradient: 'linear-gradient(135deg, #4675dd, #3b65c4)', desc: 'Qanday sharoitda o\'tiladi: Search optimization. Darslar qanday o\'tkaziladi: Keywords. 1-mavzu nima: Meta tags.', price: 350000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 15000 },
+                { id: 24, subject: 'Marketing', icon: '📢', gradient: 'linear-gradient(135deg, #f093fb, #f5576c)', desc: 'Qanday sharoitda o\'tiladi: Digital marketing. Darslar qanday o\'tkaziladi: Campaigns. 1-mavzu nima: Analytics.', price: 400000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 18000 },
+                { id: 25, subject: 'Design', icon: '🎨', gradient: 'linear-gradient(135deg, #ff9a9e, #fecfef)', desc: 'Qanday sharoitda o\'tiladi: Visual design. Darslar qanday o\'tkaziladi: Typography. 1-mavzu nima: Color theory.', price: 450000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 20000 },
+                { id: 26, subject: 'Photoshop', icon: '🖌️', gradient: 'linear-gradient(135deg, #1e3c72, #2a5298)', desc: 'Qanday sharoitda o\'tiladi: Image editing. Darslar qanday o\'tkaziladi: Layers. 1-mavzu nima: Filters.', price: 450000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 20000 },
+                { id: 27, subject: 'Illustrator', icon: '🖌️', gradient: 'linear-gradient(135deg, #ee9ca7, #dfe7fd)', desc: 'Qanday sharoitda o\'tiladi: Vector graphics. Darslar qanday o\'tkaziladi: Paths. 1-mavzu nima: Shapes.', price: 450000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 20000 },
+                { id: 28, subject: 'Figma', icon: '✏️', gradient: 'linear-gradient(135deg, #f56565, #ed8936)', desc: 'Qanday sharoitda o\'tiladi: UI design. Darslar qanday o\'tkaziladi: Prototyping. 1-mavzu nima: Components.', price: 500000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 25000 },
+                { id: 29, subject: 'UI/UX', icon: '📱', gradient: 'linear-gradient(135deg, #84fab0, #8fd3f4)', desc: 'Qanday sharoitda o\'tiladi: User experience. Darslar qanday o\'tkaziladi: Research. 1-mavzu nima: Wireframes.', price: 550000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 25000 },
+                { id: 30, subject: 'Mobile', icon: '📱', gradient: 'linear-gradient(135deg, #4facfe, #00f2fe)', desc: 'Qanday sharoitda o\'tiladi: Mobile apps. Darslar qanday o\'tkaziladi: Platforms. 1-mavzu nima: Navigation.', price: 500000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 25000 },
+                { id: 31, subject: 'Flutter', icon: '📱', gradient: 'linear-gradient(135deg, #02569b, #096dc9)', desc: 'Qanday sharoitda o\'tiladi: Cross-platform. Darslar qanday o\'tkaziladi: Widgets. 1-mavzu nima: State management.', price: 550000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 25000 },
+                { id: 32, subject: 'React Native', icon: '📱', gradient: 'linear-gradient(135deg, #20232a, #61dafb)', desc: 'Qanday sharoitda o\'tiladi: Native apps. Darslar qanday o\'tkaziladi: Components. 1-mavzu nima: Navigation.', price: 550000, varoqs: 10, videoId: 'dQw4w9WgXcQ', discount: 25000 }
+            ],
+            bookings: []
+        };
+        let currentUser = null;
+        let currentLoginType = 'student';
+        let landingStep = 1;
+        const landingSteps = [
+            { title: 'Hush kelibsz! 🎉', text: 'Online kurslarimizga xush kelibsiz. Biz bilan dasturlash, IT va boshqa fanlarni o\'rganishingiz mumkin.' },
+            { title: 'Biz kim? 👋', text: 'Biz - Paxlavon and Azizbek jamoasi. Sizga eng yaxshi bilimlarni o\'rgatish uchun mashg\'ul bo\'lamiz.' },
+            { title: 'Kurslarimiz 📚', text: 'Bizda 32 ta turli fanlar kurslari mavjud: JavaScript, Python, Java, C++, HTML&CSS va boshqalar.' },
+            { title: 'Boshlash! 🚀', text: 'Hozir tizimga kirishingiz yoki ro\'yxatdan o\'tishingiz mumkin. Kurslarni band qilishni unutmang!' }
+        ];
+
+        function formatPrice(price) { return price.toLocaleString('uz-UZ') + ' so\'m'; }
+        function showError(msg) { const p = document.getElementById('errorPopup'); p.textContent = msg; p.classList.add('show'); setTimeout(() => p.classList.remove('show'), 3000); }
+        function showModal(title, msg) { document.getElementById('successModalBody').innerHTML = '<div style="font-size: 4rem; margin-bottom: 1rem;">✅</div><h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;">' + title + '</h3><p style="color: #6b7280;">' + msg + '</p>'; document.getElementById('successModal').classList.add('show'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        function closeBooking() { document.getElementById('bookingModal').classList.remove('show'); }
+        function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
+        function toggleFooter() {
+            const footer = document.getElementById('footer');
+            if (footer.classList.contains('collapsed')) { footer.classList.remove('collapsed'); footer.classList.add('open'); }
+            else { footer.classList.remove('open'); footer.classList.add('collapsed'); }
+        }
+
+        function init() {
+            localStorage.setItem('onlineKursDB', JSON.stringify(db));
+            showLandingModal();
+        }
+
+        function showLandingModal() {
+            renderCourses();
+            updateLandingContent();
+            document.getElementById('landingModal').classList.add('show');
+        }
+
+        function updateLandingContent() {
+            const step = landingSteps[landingStep - 1];
+            document.getElementById('landingTitle').textContent = step.title;
+            document.getElementById('landingText').textContent = step.text;
+            
+            const nextBtn = document.getElementById('landingNextBtn');
+            if (landingStep < landingSteps.length) {
+                nextBtn.style.display = 'inline-block';
+                nextBtn.textContent = 'Keyingi ➡️';
+            } else {
+                nextBtn.style.display = 'inline-block';
+                nextBtn.textContent = 'Kurslarni ko\'rish 🎯';
+            }
+        }
+
+        function nextLandingStep() {
+            if (landingStep < landingSteps.length) {
+                landingStep++;
+                updateLandingContent();
+            } else {
+                closeModal('landingModal');
+            }
+        }
+
+        function renderCourses() {
+            const courses = db.courses;
+            let html = '<div class="section-title" style="text-align: center; margin-bottom: 2rem; font-size: 2.25rem; font-weight: 800; color: #1f2937; font-style: italic;">💡 "Ilm - nur, jaholat - andijon"</div>';
+            html += '<div class="course-grid">';
+            courses.forEach(c => {
+                html += '<div class="course-card" data-subject="' + c.subject + '" onclick="showCourseDetails(' + c.id + ')"><div class="course-header" style="background: ' + c.gradient + ';">' + c.icon + '</div><div class="course-content">';
+                html += '<span class="course-subject" style="background: ' + c.gradient + ';">' + c.subject + '</span>';
+                html += '<div class="course-title">' + c.subject + ' kursi</div>';
+                html += '<div class="course-price">' + formatPrice(c.price) + '</div>';
+                html += '<p class="course-desc">' + c.desc.substring(0, 100) + '...</p>';
+                html += '<div class="course-info"><span>📅 ' + c.varoqs + ' varoq</span><button class="btn btn-outline" style="font-size: 0.9rem;" onclick="openYouTubeChannel(event)">▶️ YouTube kanal</button><button class="btn btn-primary" style="margin-left: 5px;" onclick="openBooking(event, ' + c.id + ')">Band qilish 📝</button></div></div></div>';
+            });
+            html += '</div>';
+            document.getElementById('mainContent').innerHTML = html;
+        }
+
+        function showLogin() {
+            let html = '<div class="auth-container"><div class="auth-box"><h2 style="text-align: center; margin-bottom: 1.5rem;">🔑 Kirish</h2>';
+            html += '<form id="loginForm"><div class="form-group"><label>Foydalanuvchi nomi:</label><input type="text" id="loginUsername" required></div><div class="form-group"><label>Parol:</label><input type="password" id="loginPassword" required></div>';
+            html += '<button type="submit" class="btn btn-primary w-full">Kirish ✅</button></form><p style="text-align: center; margin-top: 1rem;">Hisobingiz yo\'qmi? <a href="#" onclick="showRegister(); return false;" style="color: #6366f1; font-weight: 600;">Ro\'yxatdan o\'ting</a></p></div></div>';
+            document.getElementById('mainContent').innerHTML = html;
+            document.getElementById('loginForm').addEventListener('submit', function(e) { e.preventDefault(); doLogin(); });
+        }
+
+        function showRegister() {
+            let html = '<div class="auth-container"><div class="auth-box"><h2 style="text-align: center; margin-bottom: 1.5rem;">📝 Ro\'yxatdan o\'tish</h2>';
+            html += '<form id="registerForm"><div class="form-group"><label>Ism:</label><input type="text" id="regName" required></div><div class="form-group"><label>Familiya:</label><input type="text" id="regSurname" required></div><div class="form-group"><label>Telefon raqami:</label><input type="tel" id="regPhone" required pattern="^\\+9989[0-9]{8}$" maxlength="13"></div><div class="form-group"><label>Foydalanuvchi nomi:</label><input type="text" id="regUsername" required></div><div class="form-group"><label>Parol:</label><input type="password" id="regPassword" required></div><div class="form-group"><label>Parol (tasdiqlash):</label><input type="password" id="regPasswordConfirm" required></div><button type="submit" class="btn btn-primary w-full">Ro\'yxatdan o\'tish ✅</button></form><p style="text-align: center; margin-top: 1rem;">Hisobingiz bormi? <a href="#" onclick="showLogin(); return false;" style="color: #6366f1; font-weight: 600;">Kirish</a></p></div></div>';
+            document.getElementById('mainContent').innerHTML = html;
+            document.getElementById('registerForm').addEventListener('submit', function(e) { e.preventDefault(); doRegister(); });
+        }
+
+        function doLogin() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            if (!username || !password) { showError('Barcha maydonlarni to\'ldiring'); return; }
+            const user = db.users.find(u => u.username === username && u.password === password);
+            if (user) {
+                currentUser = user;
+                updateUI();
+                showModal('Muvaffaqiyatli!', 'Siz muvaffaqiyatli tizimga kirdingiz.');
+                renderCourses();
+            } else { showError('Noto\'g\'ri foydalanuvchi nomi yoki parol'); }
+        }
+
+        function doRegister() {
+            const name = document.getElementById('regName').value;
+            const surname = document.getElementById('regSurname').value;
+            const phone = document.getElementById('regPhone').value;
+            const username = document.getElementById('regUsername').value;
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regPasswordConfirm').value;
+            if (password !== confirmPassword) { showError('Parollar mos kelmaydi'); return; }
+            if (password.length < 6) { showError('Parol kamida 6 ta belgidan iborat bo\'lishi kerak'); return; }
+            if (db.users.find(u => u.username === username)) { showError('Bu foydalanuvchi nomi allaqachon mavjud'); return; }
+            db.users.push({ id: db.users.length + 1, name, surname, phone, username, password, role: 'student' });
+            localStorage.setItem('onlineKursDB', JSON.stringify(db));
+            showModal('Muvaffaqiyatli!', 'Ro\'yxatdan o\'tish muvaffaqiyatli!');
+            showLogin();
+        }
+
+        function updateUI() {
+            document.getElementById('authButtons').classList.add('hidden');
+            document.getElementById('userMenu').classList.remove('hidden');
+            document.getElementById('userEmail').textContent = currentUser.name || currentUser.username;
+        }
+
+        function logout() { currentUser = null; updateUI(); renderCourses(); }
+
+        function showCourseDetails(courseId) {
+            const course = db.courses.find(c => c.id === courseId);
+            if (!course) return;
+            
+            // O'chirish - tafsilotlar ochiladi
+            const html = `
+                <div style="text-align: center;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">${course.icon}</div>
+                    <h3 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">${course.subject}</h3>
+                    <p style="font-size: 1.1rem; color: #6b7280; line-height: 1.6;">${course.desc}</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0;">
+                        <div style="background: #f3f4f6; padding: 1rem; border-radius: 0.5rem;">
+                            <div style="font-weight: 600;">📅 Varoqlar</div>
+                            <div style="font-size: 1.5rem; font-weight: 800; color: #6366f1;">${course.varoqs}</div>
+                        </div>
+                        <div style="background: #f3f4f6; padding: 1rem; border-radius: 0.5rem;">
+                            <div style="font-weight: 600;">💰 Narx</div>
+                            <div style="font-size: 1.5rem; font-weight: 800; color: #10b981;">${formatPrice(course.price)}</div>
+                        </div>
+                        <div style="background: #f3f4f6; padding: 1rem; border-radius: 0.5rem;">
+                            <div style="font-weight: 600;">🎓 Discount</div>
+                            <div style="font-size: 1.5rem; font-weight: 800; color: #f59e0b;">${formatPrice(course.discount)}</div>
+                        </div>
+                        <div style="background: #f3f4f6; padding: 1rem; border-radius: 0.5rem;">
+                            <div style="font-weight: 600;">▶️ Video</div>
+                            <div><button class="btn btn-primary" onclick="openVideoModal(${course.id}, '${course.subject}')">1-darsni ko'rish</button></div>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.9rem; color: #9ca3af;">Discount kod "Stanford" - ${course.discount.toLocaleString()} so'm chegirma</p>
+                </div>
+            `;
+            document.getElementById('courseDetailsTitle').textContent = '📚 ' + course.subject + ' kursi haqida';
+            document.getElementById('courseDetailsBody').innerHTML = html;
+            document.getElementById('courseDetailsModal').classList.add('show');
+        }
+
+        function openYouTubeChannel(e) {
+            e.stopPropagation();
+            window.open('https://www.youtube.com/@NOSIRJANOVPAXLAVON', '_blank');
+        }
+
+        function openVideoModal(courseId, courseName) {
+            const course = db.courses.find(c => c.id === courseId);
+            if (course && course.videoId) {
+                const embedUrl = 'https://www.youtube.com/embed/' + course.videoId;
+                document.getElementById('videoModalTitle').textContent = '▶️ ' + courseName + ' - 1-dars';
+                document.getElementById('videoPlayer').src = embedUrl;
+                document.getElementById('videoModal').classList.add('show');
+                document.getElementById('courseDetailsModal').classList.remove('show');
+            }
+        }
+
+        function openBooking(e, courseId) {
+            e.stopPropagation();
+            if (!currentUser) { showError('Avval tizimga kiring'); showLogin(); return; }
+            const course = db.courses.find(c => c.id === courseId);
+            if (!course) return;
+            document.getElementById('bookingCourseId').value = courseId;
+            document.getElementById('bookingName').value = '';
+            document.getElementById('bookingPhone').value = '';
+            document.getElementById('bookingPassword').value = '';
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('bookingDate').valueAsDate = tomorrow;
+            document.getElementById('bookingModal').classList.add('show');
+        }
+
+        function submitBooking(e) {
+            e.preventDefault();
+            const courseId = parseInt(document.getElementById('bookingCourseId').value);
+            const name = document.getElementById('bookingName').value;
+            const phone = document.getElementById('bookingPhone').value;
+            const date = document.getElementById('bookingDate').value;
+            const duration = parseInt(document.getElementById('bookingDuration').value);
+            const discountCode = document.getElementById('bookingDiscount').value.trim();
+            const password = document.getElementById('bookingPassword').value;
+            if (password !== 'oylik') { showError('Noto\'g\'ri parol'); return; }
+            
+            const course = db.courses.find(c => c.id === courseId);
+            let finalPrice = course.price;
+            let discountApplied = 0;
+            
+            if (discountCode === 'Stanford') {
+                discountApplied = course.discount;
+                finalPrice = course.price - course.discount;
+            }
+            
+            const booking = { id: db.bookings.length + 1, courseId: courseId, teacherId: currentUser.id, name: name, phone: phone, date: date, duration: duration, discount: discountApplied, finalPrice: finalPrice };
+            db.bookings.push(booking);
+            localStorage.setItem('onlineKursDB', JSON.stringify(db));
+            closeBooking();
+            
+            let msg = 'Kurs muvaffaqiyatli band qilindi! ✅\n';
+            msg += 'Jami to\'lov: ' + finalPrice.toLocaleString() + ' so\'m';
+            
+            if (discountApplied > 0) {
+                msg += '\nDiscount kod: ' + discountApplied.toLocaleString() + ' so\'m';
+            }
+            
+            showModal('Muvaffaqiyatli!', msg);
+            renderCourses();
+        }
+
+        document.getElementById('bookingForm').addEventListener('submit', submitBooking);
+        init();
+    </script>
+</body>
+</html>
